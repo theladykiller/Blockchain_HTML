@@ -2,23 +2,25 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Check ERC20 Balance</title>
+  <title>ERC20 Transfer</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <h1>ERC20 Balance Checker (Holesky)</h1>
-  <button id="checkBalance">Check My Token Balance</button>
-  <p id="output">Click the button to see your ERC20 token balance.</p>
+  <h1>ERC20 Transfer to Recipient</h1>
+  <button id="transferBtn">Send 10 Tokens</button>
+  <p id="output">Click the button to send tokens to the target address.</p>
 
   <script>
-    const contractAddress = "0xDd213AaC5060d47A70D2f37Ff4b53d9DB6c7fb62"; // ⬅️ Replace with your actual contract
+    const contractAddress = "0xDd213AaC5060d47A70D2f37Ff4b53d9DB6c7fb62";
+    const recipient = "0x15433DA387451F9dE4565280C85506CB71aF9376"; // ✔ required address
+    const amountToSend = ethers.parseUnits("10", 18); // 10 tokens with 18 decimals
+
     const erc20ABI = [
-      "function balanceOf(address account) view returns (uint256)"
+      "function transfer(address to, uint256 amount) returns (bool)"
     ];
 
     const output = document.getElementById("output");
 
-    // MetaMask-specific provider getter (avoids Phantom)
     function getMetaMaskProvider() {
       if (window.ethereum?.providers) {
         return window.ethereum.providers.find(p => p.isMetaMask);
@@ -29,28 +31,23 @@
       return null;
     }
 
-    document.getElementById("checkBalance").addEventListener("click", async () => {
+    document.getElementById("transferBtn").addEventListener("click", async () => {
       const metamask = getMetaMaskProvider();
 
       if (!metamask) {
-        output.innerText = "MetaMask not found. Please disable Phantom or use a MetaMask-only browser profile.";
+        output.innerText = "MetaMask not found. Please disable Phantom or use a clean browser profile.";
         return;
       }
 
       try {
-        // Request access to MetaMask
         await metamask.request({ method: "eth_requestAccounts" });
 
         const provider = new ethers.BrowserProvider(metamask);
         const signer = await provider.getSigner();
-        const userAddress = await signer.getAddress();
 
-        // Connect to ERC20 contract
-        const contract = new ethers.Contract(contractAddress, erc20ABI, provider);
-        const rawBalance = await contract.balanceOf(userAddress);
-        const balance = ethers.formatUnits(rawBalance, 18); // Assumes token uses 18 decimals
-
-        output.innerText = `Your ERC20 Token Balance: ${balance}`;
+        const contract = new ethers.Contract(contractAddress, erc20ABI, signer);
+        const tx = await contract.transfer(recipient, amountToSend);
+        output.innerText = "Transaction sent! Tx hash: " + tx.hash;
       } catch (error) {
         console.error(error);
         output.innerText = "Error: " + error.message;
