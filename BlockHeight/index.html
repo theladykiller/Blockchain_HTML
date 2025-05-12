@@ -1,37 +1,45 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <title>Holesky Block Height</title>
-        <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
-    </head>
-    <body>
-        <h1>Holesky Block Height Checker</h1>
-        <button id="checkBlock">Get Current Block Height</button>
-        <p id="output">Block : ?</p>
-        
-        <script>
-            const checkBlockBtn = document.getElementById('checkBlock');
-            const output = document.getElementById('output');
+<head>
+  <meta charset="UTF-8">
+  <title>Holesky Block Height</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <h1>Check Holesky Block Height</h1>
+  <button id="checkBlock">Get Block Height</button>
+  <p id="output">Click the button to fetch the current block.</p>
 
-            checkBlockBtn.onclick = async () => {
-                if (typeof window.ethereum !== "undefined") {
-                    try {
-                        // Request account access if not connected
-                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+  <script>
+    const output = document.getElementById("output");
 
-                        // Connect to Holesky via MetaMask
-                        const provider = new ethers.BrowserProvider(window.ethereum);
-                        const blockNumber = await (await provider).getBlockNumber();
+    function getMetaMaskProvider() {
+      if (window.ethereum?.providers) {
+        return window.ethereum.providers.find(p => p.isMetaMask);
+      }
+      if (window.ethereum?.isMetaMask) {
+        return window.ethereum;
+      }
+      return null;
+    }
 
-                        output.innerText = "Current Block: " + blockNumber;
-                    } catch (err) {
-                        output.innerText = "Error: " + err.message;
-                    }
-                } else {
-                    output.innerText = "MetaMask is not installed.";
-                }
-            };
-        </script>
-    </body>
+    document.getElementById("checkBlock").addEventListener("click", async () => {
+      const metamask = getMetaMaskProvider();
+
+      if (metamask) {
+        try {
+          await metamask.request({ method: "eth_requestAccounts" });
+          const provider = new ethers.BrowserProvider(metamask);
+          const blockNumber = await (await provider).getBlockNumber();
+          output.innerText = "Current Holesky Block: " + blockNumber;
+        } catch (err) {
+          console.error(err);
+          output.innerText = "Error: " + err.message;
+        }
+      } else {
+        output.innerText = "MetaMask not found. Please disable Phantom or set MetaMask as default.";
+      }
+    });
+  </script>
+</body>
 </html>
