@@ -1,10 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <title>title</title>
+  <meta charset="UTF-8">
+  <title>Check ERC20 Balance</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    
+  <h1>ERC20 Balance Checker</h1>
+  <button id="checkBalance">Check My Token Balance</button>
+  <p id="output">Click the button to view your balance.</p>
+
+  <script>
+    const contractAddress = "0xDd213AaC5060d47A70D2f37Ff4b53d9DB6c7fb62";
+    const erc20ABI = [
+      "function balanceOf(address account) view returns (uint256)"
+    ];
+
+    const output = document.getElementById("output");
+
+    function getMetaMaskProvider() {
+      if (window.ethereum?.providers) {
+        return window.ethereum.providers.find(p => p.isMetaMask);
+      }
+      if (window.ethereum?.isMetaMask) {
+        return window.ethereum;
+      }
+      return null;
+    }
+
+    document.getElementById("checkBalance").addEventListener("click", async () => {
+      const metamask = getMetaMaskProvider();
+
+      if (!metamask) {
+        output.innerText = "MetaMask not found. Disable Phantom or use a MetaMask-only browser profile.";
+        return;
+      }
+
+      try {
+        await metamask.request({ method: "eth_requestAccounts" });
+
+        const provider = new ethers.BrowserProvider(metamask);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
+
+        const contract = new ethers.Contract(contractAddress, erc20ABI, provider);
+        const rawBalance = await contract.balanceOf(userAddress);
+        const balance = ethers.formatUnits(rawBalance, 18); // 18 decimals assumed
+
+        output.innerText = `Your Token Balance: ${balance}`;
+      } catch (err) {
+        console.error(err);
+        output.innerText = "Error: " + err.message;
+      }
+    });
+  </script>
 </body>
 </html>
